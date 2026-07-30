@@ -1,0 +1,13 @@
+<% html_title t("itsm.sla_policies.edit"), @project.name %>
+<%= render partial: "itsm/shared/page_header",
+           locals: { title: t("itsm.sla_policies.edit"), project: @project } %>
+
+<%= form_for @policy,
+             as: :itsm_sla_policy,
+             url: itsm_sla_policy_path(@project, @policy),
+             method: :put,
+             html: { class: "form" } do |f| %>
+  <%= render partial: "itsm/sla_policies/form", locals: { f: f } %>
+  <%= styled_button_tag t(:button_save), class: "-primary" %>
+  <%= link_to t(:button_cancel), itsm_sla_policies_path(@project), class: "button" %>
+<% end %>

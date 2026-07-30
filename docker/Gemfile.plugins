@@ -1,0 +1,5 @@
+# frozen_string_literal: true
+
+group :opf_plugins do
+  gem "openproject-itsm", path: "/app/vendor/openproject-itsm"
+end

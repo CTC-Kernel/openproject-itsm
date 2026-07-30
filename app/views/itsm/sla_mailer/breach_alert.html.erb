@@ -1,0 +1,15 @@
+<p><strong><%= t("itsm.mailer.breach_intro.#{@kind}") %></strong></p>
+
+<p>
+  <%= t(:label_work_package) %> :
+  <a href="<%= work_package_url(@work_package) %>">
+    #<%= @work_package.id %> — <%= @work_package.subject %>
+  </a>
+</p>
+
+<ul>
+  <li><%= t("itsm.labels.project") %> : <%= @work_package.project.name %></li>
+  <li><%= t("itsm.labels.priority") %> : <%= @work_package.priority&.name %></li>
+  <li><%= t("itsm.labels.status") %> : <%= @work_package.status&.name %></li>
+  <li><%= t("itsm.labels.due_at") %> : <%= format_time(@due_at) if @due_at %></li>
+</ul>

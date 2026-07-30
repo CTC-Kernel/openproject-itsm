@@ -1,0 +1,53 @@
+<% if states.blank? %>
+  <p class="op-itsm-empty"><%= t(:label_nothing_display) %></p>
+<% else %>
+  <div class="generic-table--container">
+    <table class="generic-table">
+      <caption class="hidden-for-sighted"><%= table_label %></caption>
+      <thead>
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col"><%= t("itsm.labels.subject") %></th>
+          <th scope="col"><%= t("itsm.labels.type") %></th>
+          <th scope="col"><%= t("itsm.labels.priority") %></th>
+          <th scope="col"><%= t("itsm.labels.status") %></th>
+          <th scope="col"><%= t("itsm.labels.assignee") %></th>
+          <th scope="col"><%= t("itsm.labels.response_due") %></th>
+          <th scope="col"><%= t("itsm.labels.resolution_due") %></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% states.each do |state| %>
+          <% wp = state.work_package %>
+          <tr>
+            <td><%= link_to "##{wp.id}", work_package_path(wp) %></td>
+            <td><%= link_to wp.subject, work_package_path(wp) %></td>
+            <td><%= wp.type&.name %></td>
+            <td><%= itsm_priority_badge(wp.priority&.name) %></td>
+            <td>
+              <%= wp.status&.name %>
+              <% if state.paused? %>
+                <span class="op-itsm-paused">(⏸ <%= t("itsm.labels.paused") %>)</span>
+              <% end %>
+            </td>
+            <td><%= wp.assigned_to&.name || "—" %></td>
+            <td>
+              <% if state.responded? %>
+                ✓ <span class="hidden-for-sighted"><%= t("itsm.dashboard.responded") %></span>
+              <% else %>
+                <%= itsm_due_label(state.response_due_at) %>
+              <% end %>
+            </td>
+            <td>
+              <% if state.resolved? %>
+                ✓ <span class="hidden-for-sighted"><%= t("itsm.dashboard.resolved") %></span>
+              <% else %>
+                <%= itsm_due_label(state.resolution_due_at) %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

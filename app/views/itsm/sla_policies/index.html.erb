@@ -1,0 +1,55 @@
+<% html_title t("itsm.labels.sla_policies"), @project.name %>
+
+<%= render partial: "itsm/shared/page_header",
+           locals: { title: t("itsm.labels.sla_policies"),
+                     project: @project,
+                     actions: [
+                       { label: t("itsm.sla_policies.new"),
+                         href: new_itsm_sla_policy_path(@project),
+                         primary: true }
+                     ] } %>
+
+<% if @policies.empty? %>
+  <p class="nodata"><%= t("itsm.sla_policies.none") %></p>
+<% else %>
+  <div class="generic-table--container">
+    <table class="generic-table">
+      <thead>
+        <tr>
+          <th><%= t("itsm.labels.name") %></th>
+          <th><%= t("itsm.labels.priority") %></th>
+          <th><%= t("itsm.labels.response_minutes") %></th>
+          <th><%= t("itsm.labels.resolution_minutes") %></th>
+          <th><%= t("itsm.labels.coverage") %></th>
+          <th><%= t("itsm.labels.active") %></th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @policies.each do |policy| %>
+          <tr>
+            <td><%= policy.name %></td>
+            <td><%= policy.priority&.name || t("itsm.labels.default_policy") %></td>
+            <td><%= policy.response_minutes %> min</td>
+            <td><%= policy.resolution_minutes %> min</td>
+            <td>
+              <% if policy.support_24_7? %>
+                24/7
+              <% else %>
+                <%= policy.day_start %>–<%= policy.day_end %> (<%= policy.working_days %>)
+              <% end %>
+            </td>
+            <td><%= policy.active? ? "✓" : "—" %></td>
+            <td>
+              <%= link_to t(:button_edit), edit_itsm_sla_policy_path(@project, policy) %>
+              <%= link_to t(:button_delete),
+                          itsm_sla_policy_path(@project, policy),
+                          data: { turbo_method: :delete,
+                                  turbo_confirm: t(:text_are_you_sure) } %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

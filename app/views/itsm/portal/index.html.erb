@@ -1,0 +1,41 @@
+<% html_title t("itsm.menu.portal"), @project.name %>
+
+<%= render partial: "itsm/shared/page_header",
+           locals: { title: t("itsm.portal.my_tickets"),
+                     project: @project,
+                     actions: [
+                       { label: t("itsm.portal.new_ticket"),
+                         href: new_itsm_portal_ticket_path(@project),
+                         primary: true }
+                     ] } %>
+
+<% if @tickets.empty? %>
+  <p class="nodata"><%= t("itsm.portal.no_tickets") %></p>
+<% else %>
+  <div class="generic-table--container">
+    <table class="generic-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th><%= t("itsm.labels.subject") %></th>
+          <th><%= t("itsm.labels.type") %></th>
+          <th><%= t("itsm.labels.status") %></th>
+          <th><%= t("itsm.labels.priority") %></th>
+          <th><%= t("itsm.labels.created_at") %></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @tickets.each do |ticket| %>
+          <tr>
+            <td><%= link_to "##{ticket.id}", work_package_path(ticket) %></td>
+            <td><%= ticket.subject %></td>
+            <td><%= ticket.type&.name %></td>
+            <td><%= ticket.status&.name %></td>
+            <td><%= ticket.priority&.name %></td>
+            <td><%= format_time(ticket.created_at) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

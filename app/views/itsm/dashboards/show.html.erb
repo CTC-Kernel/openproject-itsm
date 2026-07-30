@@ -1,0 +1,104 @@
+<% html_title t("itsm.menu.dashboard"), @project.name %>
+
+<%= render partial: "itsm/shared/page_header",
+           locals: { title: t("itsm.menu.dashboard"),
+                     project: @project,
+                     actions: [
+                       { label: t("itsm.labels.sla_policies"),
+                         href: itsm_sla_policies_path(@project),
+                         icon: :gear },
+                       { label: t("itsm.portal.new_ticket"),
+                         href: new_itsm_portal_ticket_path(@project),
+                         primary: true }
+                     ] } %>
+
+<%= render partial: "itsm/shared/dashboard_styles" %>
+
+<section class="op-itsm-kpis" aria-label="<%= t('itsm.dashboard.summary') %>">
+  <div class="op-itsm-kpi">
+    <span class="op-itsm-kpi--value"><%= @open_count %></span>
+    <span class="op-itsm-kpi--label"><%= t("itsm.dashboard.open_tickets") %></span>
+  </div>
+  <div class="op-itsm-kpi">
+    <span class="op-itsm-kpi--value"><%= @open_incidents %></span>
+    <span class="op-itsm-kpi--label"><%= t("itsm.global.open_incidents") %></span>
+  </div>
+  <div class="op-itsm-kpi <%= '-attention' if @at_risk.any? %>">
+    <span class="op-itsm-kpi--value"><%= @at_risk.size %></span>
+    <span class="op-itsm-kpi--label"><%= t("itsm.dashboard.at_risk") %></span>
+  </div>
+  <div class="op-itsm-kpi <%= '-danger' if @breached.any? %>">
+    <span class="op-itsm-kpi--value"><%= @breached.size %></span>
+    <span class="op-itsm-kpi--label"><%= t("itsm.dashboard.breached") %></span>
+  </div>
+  <div class="op-itsm-kpi -success">
+    <span class="op-itsm-kpi--value"><%= @resolved_last_30d %></span>
+    <span class="op-itsm-kpi--label"><%= t("itsm.dashboard.resolved_30d") %></span>
+  </div>
+  <div class="op-itsm-kpi">
+    <span class="op-itsm-kpi--value"><%= itsm_duration_short(@mttr_seconds) %></span>
+    <span class="op-itsm-kpi--label"><%= t("itsm.dashboard.mttr_30d") %></span>
+  </div>
+</section>
+
+<% if @open_count.zero? %>
+  <p class="op-itsm-empty"><%= t("itsm.dashboard.all_clear") %></p>
+<% else %>
+  <div class="op-itsm-cols">
+    <section class="op-itsm-panel" aria-label="<%= t('itsm.dashboard.open_by_priority') %>">
+      <h3><%= t("itsm.dashboard.open_by_priority") %></h3>
+      <% max = @open_by_priority.map(&:last).max.to_f %>
+      <% @open_by_priority.each do |priority_name, count| %>
+        <div class="op-itsm-row">
+          <span class="op-itsm-row--label"><%= itsm_priority_badge(priority_name) %></span>
+          <span class="op-itsm-bar" aria-hidden="true">
+            <span style="width: <%= max.positive? ? ((count / max) * 100).round : 0 %>%"></span>
+          </span>
+          <span class="op-itsm-row--count"><%= count %></span>
+        </div>
+      <% end %>
+    </section>
+
+    <section class="op-itsm-panel" aria-label="<%= t('itsm.dashboard.open_by_type') %>">
+      <h3><%= t("itsm.dashboard.open_by_type") %></h3>
+      <% max = @open_by_type.values.max.to_f %>
+      <% @open_by_type.sort_by { |_, c| -c }.each do |type_name, count| %>
+        <div class="op-itsm-row">
+          <span class="op-itsm-row--label"><%= type_name %></span>
+          <span class="op-itsm-bar" aria-hidden="true">
+            <span style="width: <%= max.positive? ? ((count / max) * 100).round : 0 %>%"></span>
+          </span>
+          <span class="op-itsm-row--count"><%= count %></span>
+        </div>
+      <% end %>
+    </section>
+  </div>
+<% end %>
+
+<% if @breached.any? %>
+  <h3 class="op-itsm-h -danger">
+    <%= t("itsm.dashboard.breached") %>
+    <span class="op-itsm-count-pill"><%= @breached.size %></span>
+  </h3>
+  <%= render partial: "itsm/dashboards/sla_table",
+             locals: { states: @breached, table_label: t("itsm.dashboard.breached") } %>
+<% end %>
+
+<% if @at_risk.any? %>
+  <h3 class="op-itsm-h">
+    <%= t("itsm.dashboard.at_risk") %>
+    <span class="op-itsm-count-pill"><%= @at_risk.size %></span>
+  </h3>
+  <%= render partial: "itsm/dashboards/sla_table",
+             locals: { states: @at_risk, table_label: t("itsm.dashboard.at_risk") } %>
+<% end %>
+
+<% if @recent_open.any? %>
+  <h3 class="op-itsm-h">
+    <%= t("itsm.dashboard.recent_open") %>
+    <span class="op-itsm-count-pill"><%= @recent_open.size %></span>
+  </h3>
+  <%= render partial: "itsm/dashboards/sla_table",
+             locals: { states: @recent_open.map(&:itsm_sla_state).compact,
+                       table_label: t("itsm.dashboard.recent_open") } %>
+<% end %>

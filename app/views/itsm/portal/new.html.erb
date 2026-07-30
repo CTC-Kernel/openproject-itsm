@@ -1,0 +1,52 @@
+<% html_title t("itsm.portal.new_ticket"), @project.name %>
+<%= render partial: "itsm/shared/page_header",
+           locals: { title: t("itsm.portal.new_ticket"), project: @project } %>
+
+<%= form_tag itsm_portal_tickets_path(@project), class: "form" do %>
+  <div class="form--section">
+    <div class="form--field">
+      <label class="form--label"><%= t("itsm.labels.type") %> *</label>
+      <%= select_tag :type_id,
+                     options_from_collection_for_select(@types, :id, :name),
+                     class: "form--select" %>
+    </div>
+
+    <div class="form--field">
+      <label class="form--label"><%= t("itsm.labels.subject") %> *</label>
+      <%= text_field_tag :subject, nil, required: true, class: "form--text-field" %>
+    </div>
+
+    <div class="form--field">
+      <label class="form--label"><%= t("itsm.labels.description") %></label>
+      <%= text_area_tag :description, nil, rows: 8, class: "form--text-area" %>
+      <p class="form--field-instructions"><%= t("itsm.portal.description_hint") %></p>
+    </div>
+
+    <% if @impact_field %>
+      <div class="form--field">
+        <label class="form--label"><%= t("itsm.labels.impact") %></label>
+        <%= select_tag :impact,
+                       options_from_collection_for_select(
+                         @impact_field.custom_options.sort_by(&:position), :id, :value
+                       ),
+                       include_blank: true,
+                       class: "form--select" %>
+      </div>
+    <% end %>
+
+    <% if @urgency_field %>
+      <div class="form--field">
+        <label class="form--label"><%= t("itsm.labels.urgency") %></label>
+        <%= select_tag :urgency,
+                       options_from_collection_for_select(
+                         @urgency_field.custom_options.sort_by(&:position), :id, :value
+                       ),
+                       include_blank: true,
+                       class: "form--select" %>
+      </div>
+    <% end %>
+  </div>
+
+  <%= styled_button_tag t("itsm.portal.submit"), class: "-primary" %>
+  <%= link_to t(:button_cancel), itsm_portal_path(@project), class: "button" %>
+<% end %>

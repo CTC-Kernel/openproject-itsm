@@ -1,0 +1,33 @@
+<div class="form--section">
+  <div class="form--field">
+    <label class="form--label"><%= t("itsm.settings.itsm_type_names") %></label>
+    <%= styled_text_field_tag "settings[itsm_type_names]",
+                              settings["itsm_type_names"] %>
+  </div>
+
+  <div class="form--field">
+    <label class="form--label"><%= t("itsm.settings.response_status_names") %></label>
+    <%= styled_text_field_tag "settings[response_status_names]",
+                              settings["response_status_names"] %>
+  </div>
+
+  <div class="form--field">
+    <label class="form--label"><%= t("itsm.settings.paused_status_names") %></label>
+    <%= styled_text_field_tag "settings[paused_status_names]",
+                              settings["paused_status_names"] %>
+  </div>
+
+  <div class="form--field">
+    <label class="form--label"><%= t("itsm.settings.resolved_status_names") %></label>
+    <%= styled_text_field_tag "settings[resolved_status_names]",
+                              settings["resolved_status_names"] %>
+  </div>
+
+  <div class="form--field">
+    <label class="form--label"><%= t("itsm.settings.at_risk_threshold_minutes") %></label>
+    <%= styled_text_field_tag "settings[at_risk_threshold_minutes]",
+                              settings["at_risk_threshold_minutes"] %>
+  </div>
+
+  <p class="form--field-instructions"><%= t("itsm.settings.hint") %></p>
+</div>

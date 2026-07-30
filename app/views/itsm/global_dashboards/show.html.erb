@@ -1,0 +1,74 @@
+<% html_title t("itsm.menu.global_dashboard") %>
+
+<%= render partial: "itsm/shared/page_header",
+           locals: { title: t("itsm.menu.global_dashboard") } %>
+
+<%= render partial: "itsm/shared/dashboard_styles" %>
+
+<% if @rows.empty? %>
+  <p class="op-itsm-empty"><%= t("itsm.global.no_projects") %></p>
+<% else %>
+  <% total = ->(key) { @rows.sum { |r| r[key] } } %>
+  <section class="op-itsm-kpis" aria-label="<%= t('itsm.dashboard.summary') %>">
+    <div class="op-itsm-kpi">
+      <span class="op-itsm-kpi--value"><%= @rows.size %></span>
+      <span class="op-itsm-kpi--label"><%= t("itsm.global.clients") %></span>
+    </div>
+    <div class="op-itsm-kpi">
+      <span class="op-itsm-kpi--value"><%= total.call(:open) %></span>
+      <span class="op-itsm-kpi--label"><%= t("itsm.dashboard.open_tickets") %></span>
+    </div>
+    <div class="op-itsm-kpi <%= '-attention' if total.call(:at_risk).positive? %>">
+      <span class="op-itsm-kpi--value"><%= total.call(:at_risk) %></span>
+      <span class="op-itsm-kpi--label"><%= t("itsm.dashboard.at_risk") %></span>
+    </div>
+    <div class="op-itsm-kpi <%= '-danger' if total.call(:breached).positive? %>">
+      <span class="op-itsm-kpi--value"><%= total.call(:breached) %></span>
+      <span class="op-itsm-kpi--label"><%= t("itsm.dashboard.breached") %></span>
+    </div>
+    <div class="op-itsm-kpi -success">
+      <span class="op-itsm-kpi--value"><%= total.call(:resolved_30d) %></span>
+      <span class="op-itsm-kpi--label"><%= t("itsm.dashboard.resolved_30d") %></span>
+    </div>
+  </section>
+
+  <div class="generic-table--container">
+    <table class="generic-table">
+      <caption class="hidden-for-sighted"><%= t("itsm.menu.global_dashboard") %></caption>
+      <thead>
+        <tr>
+          <th scope="col"><%= t("itsm.labels.client_project") %></th>
+          <th scope="col"><%= t("itsm.dashboard.open_tickets") %></th>
+          <th scope="col"><%= t("itsm.global.open_incidents") %></th>
+          <th scope="col"><%= t("itsm.dashboard.at_risk") %></th>
+          <th scope="col"><%= t("itsm.dashboard.breached") %></th>
+          <th scope="col"><%= t("itsm.dashboard.resolved_30d") %></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @rows.each do |row| %>
+          <tr>
+            <td><%= link_to row[:project].name, project_itsm_dashboard_path(row[:project]) %></td>
+            <td><%= row[:open] %></td>
+            <td><%= row[:incidents] %></td>
+            <td>
+              <% if row[:at_risk].positive? %>
+                <span class="op-itsm-badge -p3"><%= row[:at_risk] %> <%= t("itsm.dashboard.at_risk_short") %></span>
+              <% else %>
+                0
+              <% end %>
+            </td>
+            <td>
+              <% if row[:breached].positive? %>
+                <span class="op-itsm-badge -p1"><%= row[:breached] %> <%= t("itsm.dashboard.breached_short") %></span>
+              <% else %>
+                0
+              <% end %>
+            </td>
+            <td><%= row[:resolved_30d] %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

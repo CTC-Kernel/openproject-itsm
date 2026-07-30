@@ -1,0 +1,42 @@
+# Environnement de développement / recette du plugin openproject-itsm.
+# Lancement :  docker compose up -d --build
+# Interface :  http://localhost:8081  (admin / admin au premier démarrage)
+name: pluggin
+
+services:
+  db:
+    # PostgreSQL 17 : requis par le structure.sql généré par OpenProject 16
+    image: postgres:17
+    environment:
+      POSTGRES_USER: openproject
+      POSTGRES_PASSWORD: openproject
+      POSTGRES_DB: openproject
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U openproject"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  openproject:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      OPENPROJECT_HOST__NAME: "localhost:8081"
+      OPENPROJECT_HTTPS: "false"
+      OPENPROJECT_SECRET_KEY_BASE: "dev-secret-change-me"
+      DATABASE_URL: "postgres://openproject:openproject@db/openproject"
+      OPENPROJECT_DEFAULT__LANGUAGE: "fr"
+    ports:
+      - "8081:80"
+    volumes:
+      - opdata:/var/openproject/assets
+
+volumes:
+  pgdata:
+  opdata:

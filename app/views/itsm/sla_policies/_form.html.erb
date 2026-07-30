@@ -1,0 +1,59 @@
+<%= error_messages_for @policy %>
+
+<div class="form--section">
+  <div class="form--field">
+    <%= f.label :name, t("itsm.labels.name"), class: "form--label" %>
+    <%= f.text_field :name, required: true, class: "form--text-field" %>
+  </div>
+
+  <div class="form--field">
+    <%= f.label :priority_id, t("itsm.labels.priority"), class: "form--label" %>
+    <%= f.select :priority_id,
+                 options_from_collection_for_select(IssuePriority.order(:position), :id, :name,
+                                                    @policy.priority_id),
+                 { include_blank: t("itsm.labels.default_policy") },
+                 class: "form--select" %>
+  </div>
+
+  <div class="form--field">
+    <%= f.label :response_minutes, t("itsm.labels.response_minutes"), class: "form--label" %>
+    <%= f.number_field :response_minutes, min: 1, class: "form--text-field" %>
+  </div>
+
+  <div class="form--field">
+    <%= f.label :resolution_minutes, t("itsm.labels.resolution_minutes"), class: "form--label" %>
+    <%= f.number_field :resolution_minutes, min: 1, class: "form--text-field" %>
+  </div>
+
+  <div class="form--field">
+    <%= f.label :support_24_7, "24/7", class: "form--label" %>
+    <%= f.check_box :support_24_7 %>
+  </div>
+
+  <div class="form--field">
+    <%= f.label :day_start, t("itsm.labels.day_start"), class: "form--label" %>
+    <%= f.text_field :day_start, placeholder: "08:30", class: "form--text-field" %>
+  </div>
+
+  <div class="form--field">
+    <%= f.label :day_end, t("itsm.labels.day_end"), class: "form--label" %>
+    <%= f.text_field :day_end, placeholder: "18:00", class: "form--text-field" %>
+  </div>
+
+  <div class="form--field">
+    <%= f.label :working_days, t("itsm.labels.working_days"), class: "form--label" %>
+    <%= f.text_field :working_days, placeholder: "1,2,3,4,5", class: "form--text-field" %>
+    <p class="form--field-instructions"><%= t("itsm.sla_policies.working_days_hint") %></p>
+  </div>
+
+  <div class="form--field">
+    <%= f.label :holiday_dates, t("itsm.labels.holidays"), class: "form--label" %>
+    <%= f.text_area :holiday_dates, rows: 4, class: "form--text-area" %>
+    <p class="form--field-instructions"><%= t("itsm.sla_policies.holidays_hint") %></p>
+  </div>
+
+  <div class="form--field">
+    <%= f.label :active, t("itsm.labels.active"), class: "form--label" %>
+    <%= f.check_box :active %>
+  </div>
+</div>

@@ -1,0 +1,26 @@
+<%# En-tête de page Primer (OpenProject >= 14 n'a plus le helper `toolbar`).
+    locals : title (String), project (Project, optionnel),
+             actions (tableau de { label:, href:, primary: }, optionnel) %>
+<%= render Primer::OpenProject::PageHeader.new do |header|
+      header.with_title { title }
+      header.with_breadcrumbs(
+        [
+          (if defined?(project) && project
+             { href: project_overview_path(project.id), text: project.name }
+           end),
+          title
+        ].compact
+      )
+    end %>
+
+<% if defined?(actions) && actions.present? %>
+  <%= render(Primer::OpenProject::SubHeader.new) do |subheader|
+        actions.each do |action|
+          subheader.with_action_button(scheme: action[:primary] ? :primary : :default,
+                                       leading_icon: action[:icon] || :plus,
+                                       label: action[:label],
+                                       tag: :a,
+                                       href: action[:href]) { action[:label] }
+        end
+      end %>
+<% end %>
