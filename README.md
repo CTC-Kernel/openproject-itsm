@@ -38,15 +38,60 @@ services:
     image: ghcr.io/ctc-kernel/openproject-itsm:16
 ```
 
-Migrations et provisionnement ITSM (statuts, priorités, types, champs, workflows)
-sont appliqués **automatiquement au démarrage** (idempotent ; désactivable avec
-`OPENPROJECT_ITSM_AUTOSETUP=false`).
+L'image est **publique** (aucune authentification GHCR nécessaire) et republiée à
+chaque évolution du plugin. Rien d'autre ne change dans la stack : volumes, base,
+variables d'environnement et reverse proxy sont conservés, ainsi que toutes les
+données existantes.
+
+**Prérequis** : OpenProject **16.x**, base **PostgreSQL 17**, hôte **amd64**
+(hôte arm64 : build local — voir [docs/INSTALLATION.md](docs/INSTALLATION.md)).
+
+### Ce qui se passe au démarrage
+
+1. Le boot officiel d'OpenProject applique les migrations, **y compris celles du
+   plugin** (tables `itsm_sla_policies`, `itsm_sla_states`).
+2. L'entrypoint du plugin attend que l'application réponde, puis joue le
+   provisionnement ITSM en arrière-plan — **idempotent**, rejouable à chaque
+   redémarrage sans doublon : types `Incident` / `Demande de service`, statuts ITIL,
+   priorités P1…P4, champs `Impact`, `Urgence`, `Élément de configuration`, `Canal`,
+   et workflows. Désactivable avec `OPENPROJECT_ITSM_AUTOSETUP=false` (repli manuel :
+   `rake openproject_itsm:seed`).
+
+Vérification :
+
+```bash
+docker compose logs openproject | grep openproject-itsm
+```
+
+→ doit afficher `provisionnement ITSM appliqué`. Côté interface :
+Administration → Plugins → `openproject-itsm` présent.
+
+### Mise en place d'un client
+
+Une commande crée le projet, active le module ITSM et pose 4 politiques SLA par défaut :
+
+```bash
+docker compose exec openproject bundle exec rake "openproject_itsm:setup_project[acme,Acme]"
+```
+
+Le menu du projet affiche alors **Tableau de bord ITSM** et **Portail de demandes**.
+Ajustement des SLA au contrat et rôles : [docs/CONFIGURATION_CLIENT.md](docs/CONFIGURATION_CLIENT.md).
+
+### Mise à jour / retour arrière
+
+- **Mise à jour** : `docker compose pull && docker compose up -d` — migrations et
+  seed suivent automatiquement.
+- **Retour arrière** : repointer sur `openproject/openproject:16` puis `up -d` ;
+  les tables du plugin restent en base mais sont ignorées.
+
+### Pour aller plus loin
 
 **Procédure complète pas-à-pas : [docs/PROCEDURE_IMPLEMENTATION.md](docs/PROCEDURE_IMPLEMENTATION.md)**
-(prérequis, build, déploiement, initialisation, rôles, intake email, recette, exploitation).
+(prérequis, build, déploiement, initialisation, rôles, intake email, recette,
+exploitation, dépannage).
 
-Voir aussi [docs/INSTALLATION.md](docs/INSTALLATION.md) (détails Docker) et
-[docs/CONFIGURATION_CLIENT.md](docs/CONFIGURATION_CLIENT.md) pour la mise en place d'un client.
+Voir aussi [docs/INSTALLATION.md](docs/INSTALLATION.md) (détails Docker, build local,
+emails entrants, SLA) et [docs/CONFIGURATION_CLIENT.md](docs/CONFIGURATION_CLIENT.md).
 
 Démarrage rapide (dev) depuis la racine du dépôt :
 

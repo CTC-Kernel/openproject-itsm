@@ -40,7 +40,9 @@ build nécessaire, la suite de la procédure s'applique telle quelle :
 ghcr.io/ctc-kernel/openproject-itsm:16
 ```
 
-(Image linux/amd64 ; sur un hôte arm64, construire localement comme ci-dessous.)
+(Image publique — aucun login GHCR requis — en linux/amd64 ; sur un hôte arm64,
+construire localement comme ci-dessous. Elle est republiée automatiquement à
+chaque évolution du plugin.)
 
 Sinon, construire soi-même depuis la racine du dépôt :
 
@@ -121,8 +123,14 @@ Vos données existantes sont conservées ; seules les tables du plugin s'ajouten
 **Automatique** : au démarrage du conteneur, l'entrypoint du plugin attend que
 les migrations (jouées par le boot officiel) soient à jour puis exécute
 `openproject_itsm:seed` en arrière-plan (idempotent, rejouable sans risque).
-Pour désactiver ce comportement, définir `OPENPROJECT_ITSM_AUTOSETUP=false` et
-lancer alors manuellement :
+Vérification :
+
+```bash
+docker compose logs openproject | grep openproject-itsm
+```
+
+→ `provisionnement ITSM appliqué`. Pour désactiver ce comportement, définir
+`OPENPROJECT_ITSM_AUTOSETUP=false` et lancer alors manuellement :
 
 ```bash
 docker compose exec openproject bundle exec rake db:migrate openproject_itsm:seed
@@ -258,6 +266,11 @@ docker compose up -d          # recrée le conteneur, les données persistent
 `--build-arg OPENPROJECT_VERSION=…` et **tester en recette d'abord** — les
 patches du plugin touchent des API internes qui peuvent évoluer entre versions
 majeures (voir §11).
+
+**Retour arrière** : repointer l'image sur l'officielle
+(`openproject/openproject:16`) puis `docker compose up -d`. Les tables et données
+du plugin restent en base (ignorées par le cœur) et sont retrouvées intactes si
+l'on revient au plugin.
 
 **Repli si le cron interne des SLA est indisponible** :
 

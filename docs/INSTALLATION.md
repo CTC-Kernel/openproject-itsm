@@ -34,15 +34,27 @@ personnalisés (`Impact`, `Urgence`, `Élément de configuration`, `Canal`) et
 workflows. Vos données existantes sont conservées ; seules les deux tables du
 plugin s'ajoutent.
 
+Vérification que le provisionnement est passé :
+
+```bash
+docker compose logs openproject | grep openproject-itsm
+```
+
+→ doit afficher `provisionnement ITSM appliqué`. (Au premier démarrage d'une base
+vierge, comptez 3 à 8 minutes : l'initialisation d'OpenProject précède le seed.)
+
 Pour désactiver cette préparation automatique (et repasser aux commandes
 manuelles ci-dessous) : `OPENPROJECT_ITSM_AUTOSETUP=false` dans l'environnement
 du service.
 
 Notes :
 
+- l'image est **publique** : aucune authentification GHCR n'est nécessaire pour la puller ;
 - l'image publiée est **linux/amd64** (hôte arm64 : construire localement, Option B) ;
 - elle dérive de `openproject/openproject:16` (all-in-one) : mêmes volumes, mêmes
-  variables d'environnement, base **PostgreSQL 17** requise.
+  variables d'environnement, base **PostgreSQL 17** requise ;
+- si la stack tourne encore en OpenProject 14/15, changer d'image effectue aussi la
+  montée de version d'OpenProject : testez en recette d'abord.
 
 ## Option B — Construire l'image soi-même
 
@@ -107,3 +119,17 @@ docker compose exec openproject bundle exec rake openproject_itsm:check_sla
 reconstruisez l'image avec le nouveau tag) et testez en recette : les patches
 (`WorkPackage`, `MailHandler`) sont défensifs mais les API internes peuvent évoluer
 entre versions majeures.
+
+## Retour arrière
+
+Repointez l'image du service sur l'officielle (`openproject/openproject:16`) puis
+`docker compose up -d`. Les tables du plugin (`itsm_sla_policies`, `itsm_sla_states`)
+et ses données de référence restent en base mais sont simplement ignorées ; un
+retour au plugin les retrouve intactes.
+
+## Dépannage
+
+Voir le tableau des pièges connus dans
+[PROCEDURE_IMPLEMENTATION.md](PROCEDURE_IMPLEMENTATION.md) (§ Dépannage) — les plus
+fréquents : base en PostgreSQL < 17 (`transaction_timeout`), SMTP absent (pas
+d'alertes SLA), champs `Impact`/`Urgence` renommés (priorité non calculée).
