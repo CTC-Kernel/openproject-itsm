@@ -27,6 +27,21 @@ Les droits, workflows et SLA restent ainsi isolés par client, et la vue globale
 
 ## Installation
 
+**Stack Docker existante — intégration en une ligne** : remplacez l'image de votre
+service OpenProject par l'image préconstruite (ou déposez
+[docker-compose.override.example.yml](docker-compose.override.example.yml) renommé en
+`docker-compose.override.yml` à côté de votre compose), puis `docker compose up -d` :
+
+```yaml
+services:
+  openproject:
+    image: ghcr.io/ctc-kernel/openproject-itsm:16
+```
+
+Migrations et provisionnement ITSM (statuts, priorités, types, champs, workflows)
+sont appliqués **automatiquement au démarrage** (idempotent ; désactivable avec
+`OPENPROJECT_ITSM_AUTOSETUP=false`).
+
 **Procédure complète pas-à-pas : [docs/PROCEDURE_IMPLEMENTATION.md](docs/PROCEDURE_IMPLEMENTATION.md)**
 (prérequis, build, déploiement, initialisation, rôles, intake email, recette, exploitation).
 
@@ -37,7 +52,6 @@ Démarrage rapide (dev) depuis la racine du dépôt :
 
 ```bash
 docker compose up -d --build
-docker compose exec openproject bundle exec rake db:migrate openproject_itsm:seed
 docker compose exec openproject bundle exec rake "openproject_itsm:setup_project[acme]"
 ```
 

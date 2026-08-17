@@ -1,0 +1,15 @@
+# Intégration du plugin ITSM à une stack Docker OpenProject EXISTANTE,
+# sans toucher à son docker-compose.yml :
+#
+#   1. Copier ce fichier à côté du docker-compose.yml existant, sous le nom
+#      docker-compose.override.yml (Compose le fusionne automatiquement).
+#   2. Adapter le nom du service si besoin (openproject, web, app…).
+#   3. docker compose up -d
+#
+# L'image embarque le plugin et applique elle-même, au démarrage, les
+# migrations et le provisionnement ITSM (idempotents) : aucune commande
+# manuelle n'est nécessaire. Mettre OPENPROJECT_ITSM_AUTOSETUP=false pour
+# désactiver ce comportement.
+services:
+  openproject:
+    image: ghcr.io/ctc-kernel/openproject-itsm:16

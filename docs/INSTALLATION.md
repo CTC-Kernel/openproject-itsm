@@ -1,10 +1,50 @@
-# Installation (Docker, image custom)
+# Installation (Docker)
 
 Les plugins OpenProject ne s'installent pas « à chaud » : ils sont déclarés dans un
-`Gemfile.plugins` et embarqués dans une image Docker reconstruite. C'est le mécanisme
-officiel documenté par OpenProject.
+`Gemfile.plugins` et embarqués dans une image Docker (mécanisme officiel OpenProject).
+Une **image préconstruite** est publiée sur GHCR pour que l'intégration à une stack
+existante se résume à un changement d'image.
 
-## 1. Construire l'image
+## Option A — Stack Docker existante : image préconstruite (recommandé)
+
+Aucun build, aucune commande manuelle. Depuis le dossier de votre stack existante :
+
+1. Copiez [`docker-compose.override.example.yml`](../docker-compose.override.example.yml)
+   à côté de votre `docker-compose.yml`, sous le nom `docker-compose.override.yml`
+   (Compose fusionne les deux automatiquement) — ou remplacez directement l'image
+   dans votre fichier :
+
+   ```yaml
+   services:
+     openproject:                 # adaptez le nom du service (web, app…)
+       image: ghcr.io/ctc-kernel/openproject-itsm:16
+   ```
+
+2. Relancez la stack :
+
+   ```bash
+   docker compose up -d
+   ```
+
+C'est tout. Les migrations (cœur **et** plugin) sont appliquées par le démarrage
+normal d'OpenProject ; l'image attend ensuite qu'elles soient à jour et joue
+`openproject_itsm:seed` (idempotent, en arrière-plan, sans retarder le boot) :
+statuts ITIL, priorités P1…P4, types `Incident` / `Demande de service`, champs
+personnalisés (`Impact`, `Urgence`, `Élément de configuration`, `Canal`) et
+workflows. Vos données existantes sont conservées ; seules les deux tables du
+plugin s'ajoutent.
+
+Pour désactiver cette préparation automatique (et repasser aux commandes
+manuelles ci-dessous) : `OPENPROJECT_ITSM_AUTOSETUP=false` dans l'environnement
+du service.
+
+Notes :
+
+- l'image publiée est **linux/amd64** (hôte arm64 : construire localement, Option B) ;
+- elle dérive de `openproject/openproject:16` (all-in-one) : mêmes volumes, mêmes
+  variables d'environnement, base **PostgreSQL 17** requise.
+
+## Option B — Construire l'image soi-même
 
 Depuis la racine du dépôt :
 
@@ -18,24 +58,18 @@ L'argument `OPENPROJECT_VERSION` (défaut `16`) permet de cibler une autre séri
 docker build --build-arg OPENPROJECT_VERSION=16.4 -t monorg/openproject-itsm:16.4 -f docker/Dockerfile .
 ```
 
-## 2. Déployer
-
-Remplacez l'image `openproject/openproject` de votre déploiement existant par
-`monorg/openproject-itsm:16` (docker compose, Kubernetes, etc.). Un `docker-compose.yml`
-de développement est fourni à la racine du dépôt.
-
-Au démarrage, appliquez les migrations puis provisionnez les données ITSM :
+Déployez ensuite comme en Option A (remplacement d'image) ; la préparation
+automatique au démarrage est identique. Si `OPENPROJECT_ITSM_AUTOSETUP=false`,
+lancez manuellement :
 
 ```bash
-docker compose exec openproject bundle exec rake db:migrate
-docker compose exec openproject bundle exec rake openproject_itsm:seed
+docker compose exec openproject bundle exec rake db:migrate openproject_itsm:seed
 ```
 
-`openproject_itsm:seed` est **idempotent** : il crée (sans doublonner) les statuts ITIL,
-les priorités P1…P4, les types `Incident` / `Demande de service`, les champs personnalisés
-(`Impact`, `Urgence`, `Élément de configuration`, `Canal`) et les workflows associés.
+`openproject_itsm:seed` est **idempotent** : il crée sans doublonner les données
+listées en Option A.
 
-## 3. Vérifications
+## Vérifications
 
 - Administration → Plugins : `openproject-itsm` doit apparaître, avec ses réglages
   (noms de types/statuts, seuil « à risque »).
@@ -43,7 +77,7 @@ les priorités P1…P4, les types `Incident` / `Demande de service`, les champs 
   `rake "openproject_itsm:setup_project[identifiant]"`).
 - Le menu du projet affiche alors **Tableau de bord ITSM** et **Portail de demandes**.
 
-## 4. Emails entrants (intake)
+## Emails entrants (intake)
 
 Le plugin s'appuie sur le traitement d'emails natif d'OpenProject et y ajoute le routage
 par balise de sujet : `[INC]` → Incident, `[DEM]` ou `[SR]` → Demande de service.
@@ -58,7 +92,7 @@ docker compose exec openproject bundle exec rake redmine:email:receive_imap \
 
 Chaque client peut avoir son adresse dédiée (`support-acme@…` → `project=acme`).
 
-## 5. Vérification périodique des SLA
+## Vérification périodique des SLA
 
 Le job `Itsm::SlaCheckJob` est enregistré dans le planificateur interne (toutes les
 10 minutes). En cas d'indisponibilité du cron interne, planifiez côté système :
@@ -69,6 +103,7 @@ docker compose exec openproject bundle exec rake openproject_itsm:check_sla
 
 ## Mises à jour d'OpenProject
 
-À chaque montée de version d'OpenProject, reconstruisez l'image avec le nouveau tag et
-testez en recette : les patches (`WorkPackage`, `MailHandler`) sont défensifs mais les
-API internes peuvent évoluer entre versions majeures.
+À chaque montée de version d'OpenProject, utilisez le tag GHCR correspondant (ou
+reconstruisez l'image avec le nouveau tag) et testez en recette : les patches
+(`WorkPackage`, `MailHandler`) sont défensifs mais les API internes peuvent évoluer
+entre versions majeures.

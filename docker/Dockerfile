@@ -18,8 +18,16 @@ COPY docker/Gemfile.plugins /app/Gemfile.plugins
 RUN bundle config unset deployment \
  && bundle install \
  && bundle config set deployment true \
- && chown -R app:app /app/vendor/openproject-itsm /app/Gemfile.plugins
+ && chown -R app:app /app/vendor/openproject-itsm /app/Gemfile.plugins \
+ && chmod +x /app/vendor/openproject-itsm/docker/entrypoint-itsm.sh
 
 # Recompilation des assets avec le plugin chargé (le script existe dans
 # l'image officielle ; sans frontend Angular custom il reste rapide).
 RUN ./docker/prod/setup/precompile-assets.sh || bundle exec rake assets:precompile
+
+# L'entrypoint ITSM attend que les migrations (jouées par le démarrage
+# officiel, plugin inclus) soient à jour, applique le seed idempotent en
+# arrière-plan, puis délègue à l'entrypoint officiel : remplacer l'image
+# suffit, aucune commande manuelle n'est requise sur une stack existante.
+ENTRYPOINT ["/app/vendor/openproject-itsm/docker/entrypoint-itsm.sh"]
+CMD ["./docker/prod/supervisord"]

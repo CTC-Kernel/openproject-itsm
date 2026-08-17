@@ -31,9 +31,18 @@ openproject-itsm/                 # le plugin (gem Rails)
 
 ---
 
-## 2. Construire l'image
+## 2. Obtenir l'image
 
-Depuis la racine du dépôt :
+**Le plus simple** : utiliser l'image préconstruite publiée sur GHCR — aucun
+build nécessaire, la suite de la procédure s'applique telle quelle :
+
+```
+ghcr.io/ctc-kernel/openproject-itsm:16
+```
+
+(Image linux/amd64 ; sur un hôte arm64, construire localement comme ci-dessous.)
+
+Sinon, construire soi-même depuis la racine du dépôt :
 
 ```bash
 docker build -t monorg/openproject-itsm:16 -f docker/Dockerfile .
@@ -93,23 +102,30 @@ Au premier démarrage, OpenProject migre et initialise sa base (3 à 8 min),
 ### 3.b Instance OpenProject existante
 
 Remplacez simplement l'image `openproject/openproject:16` de votre déploiement
-par `monorg/openproject-itsm:16` (mêmes volumes, même base), puis :
+par `ghcr.io/ctc-kernel/openproject-itsm:16` (mêmes volumes, même base) — soit
+dans votre compose, soit via un `docker-compose.override.yml` (modèle fourni :
+`docker-compose.override.example.yml` à la racine du dépôt) — puis :
 
 ```bash
 docker compose up -d
-docker compose exec openproject bundle exec rake db:migrate
 ```
 
+Rien d'autre : les migrations (plugin inclus) sont jouées par le démarrage
+normal d'OpenProject, puis l'image applique le provisionnement ITSM (voir §4).
 Vos données existantes sont conservées ; seules les tables du plugin s'ajoutent.
 
 ---
 
 ## 4. Initialiser les données ITSM
 
-Une seule commande, **idempotente** (rejouable sans risque) :
+**Automatique** : au démarrage du conteneur, l'entrypoint du plugin attend que
+les migrations (jouées par le boot officiel) soient à jour puis exécute
+`openproject_itsm:seed` en arrière-plan (idempotent, rejouable sans risque).
+Pour désactiver ce comportement, définir `OPENPROJECT_ITSM_AUTOSETUP=false` et
+lancer alors manuellement :
 
 ```bash
-docker compose exec openproject bundle exec rake openproject_itsm:seed
+docker compose exec openproject bundle exec rake db:migrate openproject_itsm:seed
 ```
 
 Elle crée :
@@ -230,12 +246,12 @@ Supprimez le ticket de test après recette.
 (`/var/openproject/assets`). Les données SLA vivent dans les tables
 `itsm_sla_policies` et `itsm_sla_states`.
 
-**Mise à jour du plugin** :
+**Mise à jour du plugin** (les migrations sont appliquées automatiquement au
+redémarrage) :
 
 ```bash
-docker build -t monorg/openproject-itsm:16 -f docker/Dockerfile .
+docker compose pull           # image GHCR — ou : docker build -t … -f docker/Dockerfile .
 docker compose up -d          # recrée le conteneur, les données persistent
-docker compose exec openproject bundle exec rake db:migrate
 ```
 
 **Montée de version OpenProject** : reconstruire avec le nouveau
@@ -268,16 +284,13 @@ docker compose exec openproject bundle exec rake openproject_itsm:check_sla
 ## 12. Récapitulatif express (copier-coller)
 
 ```bash
-# 1. Build
-docker build -t monorg/openproject-itsm:16 -f docker/Dockerfile .
+# 1. Pointer l'image du service OpenProject sur ghcr.io/ctc-kernel/openproject-itsm:16
+#    (docker-compose.override.example.yml fourni ; ou build local via docker/Dockerfile)
 
-# 2. Démarrage
+# 2. Démarrage — migrations + initialisation ITSM appliquées automatiquement
 docker compose up -d
 
-# 3. Initialisation ITSM (idempotent)
-docker compose exec openproject bundle exec rake openproject_itsm:seed
-
-# 4. Un projet par client
+# 3. Un projet par client
 docker compose exec openproject bundle exec rake "openproject_itsm:setup_project[acme,Acme]"
 ```
 
